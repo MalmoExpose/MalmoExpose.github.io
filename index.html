@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expose Hub</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <style>
+        body {
+            background-color: #f38218;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #000000;
+            text-align: center;
+            font-size: 3rem;
+        }
+
+        hr {
+            border: none;
+            height: 4px;
+            width: 80%;
+            margin: 20px auto;
+            background: linear-gradient(to right, #000, #fff);
+            border-radius: 5px;
+        }
+
+        .tab-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons button {
+            padding: 12px 24px;
+            margin: 0 10px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #fff;
+            transition: 0.2s;
+        }
+
+        .tab-buttons button:hover {
+            background-color: #f1f1f1;
+        }
+
+        .tab-buttons .active {
+            background-color: #000;
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            justify-items: center;
+        }
+
+        .video-container {
+            text-align: center;
+        }
+
+        video {
+            width: 100%;
+            max-width: 300px;
+            height: 500px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .video-title {
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #000;
+        }
+
+        .video-description {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        @media (max-width: 700px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Expose Hub</h1>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="malmo">Malmö</button>
+        <button class="tab-btn" data-tab="other">Andra städer</button>
+    </div>
+
+    <hr>
+    <div id="malmo" class="tab-content active">
+        <div class="video-grid">
+            <div class="video-container">
+                <video controls src="videos/malmo1.mp4"></video>
+                <div class="video-title">Video 1</div>
+                <div class="video-description">Description</div>
+            </div>
+            <div class="video-container">
+                <video controls src="videos/malmo2.mp4"></video>
+                <div class="video-title">Video2</div>
+                <div class="video-description">Description</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="other" class="tab-content">
+        <div class="video-grid">
+            <div class="video-container">
+                <video controls src="videos/lund1.mp4"></video>
+                <div class="video-title">Lund Video 1</div>
+                <div class="video-description">Description for Lund video 1 goes here.</div>
+            </div>
+            <div class="video-container">
+                <video controls src="videos/eslov1.mp4"></video>
+                <div class="video-title">Eslöv Video 1</div>
+                <div class="video-description">Description for Eslöv video 1 goes here.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            };
+        });
+    </script>
+
+</body>
+</html>
