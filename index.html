@@ -1,156 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Expose Hub</title>
-    <link rel="icon" type="image/png" href="favicon.png" />
-
-    <style>
-        body {
-            background-color: #f38218;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-
-        h1 {
-            color: #000000;
-            text-align: center;
-            font-size: 3rem;
-        }
-
-        hr {
-            border: none;
-            height: 4px;
-            width: 80%;
-            margin: 20px auto;
-            background: linear-gradient(to right, #000, #fff);
-            border-radius: 5px;
-        }
-
-        .tab-buttons {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .tab-buttons button {
-            padding: 12px 24px;
-            margin: 0 10px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background-color: #fff;
-            transition: 0.2s;
-        }
-
-        .tab-buttons button:hover {
-            background-color: #f1f1f1;
-        }
-
-        .tab-buttons .active {
-            background-color: #000;
-            color: #fff;
-        }
-
-        .tab-content {
-            display: none;
-            text-align: center;
-            margin-top: 25px;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            justify-items: center;
-        }
-
-        .video-container {
-            text-align: center;
-        }
-
-        video {
-            width: 100%;
-            max-width: 300px;
-            height: 500px;
-            border-radius: 10px;
-            object-fit: cover;
-        }
-
-        .video-title {
-            margin: 10px 0 5px 0;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #000;
-        }
-
-        .video-description {
-            font-size: 0.9rem;
-            color: #333;
-        }
-
-        @media (max-width: 700px) {
-            .video-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expose Hub</title>
+<style>
+body { background:#f38218; font-family:Arial,sans-serif; margin:0; padding:20px; }
+h1 { text-align:center; font-size:3rem; color:#000; }
+hr { border:none; height:4px; width:80%; margin:20px auto; background:linear-gradient(to right,#000,#fff); border-radius:5px; }
+.tab-buttons { text-align:center; margin-bottom:20px; }
+.tab-buttons button { padding:12px 24px; margin:0 10px; font-size:1rem; border:none; border-radius:8px; cursor:pointer; background:#fff; transition:.2s; }
+.tab-buttons .active { background:#000; color:#fff; }
+.tab-content { display:none; margin-top:25px; text-align:center; }
+.tab-content.active { display:block; }
+.grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; justify-items:center; }
+.item-container { text-align:center; }
+video,img { width:100%; max-width:300px; height:500px; border-radius:10px; object-fit:contain; background:#000; }
+.title { margin-top:10px; font-size:1.1rem; font-weight:bold; }
+.description { font-size:0.9rem; color:#333; }
+@media(max-width:700px){ .grid { grid-template-columns:1fr; } }
+</style>
 </head>
 <body>
+<h1>Expose Hub</h1>
+<div class="tab-buttons">
+<button class="tab-btn active" data-tab="malmo">Malmö</button>
+<button class="tab-btn" data-tab="other">Andra städer</button>
+</div>
+<hr>
+<div id="malmo" class="tab-content active"><div class="grid" id="mainGrid"></div></div>
+<div id="other" class="tab-content"><p style="font-size:1.2rem;color:#000;">Inga objekt ännu.</p></div>
+<button id="addBtn" style="position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;border:none;background:#000;color:#fff;font-size:2rem;cursor:pointer;">+</button>
+<div id="popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border-radius:10px;width:320px;box-shadow:0 0 10px rgba(0,0,0,0.4);text-align:center;">
+<h3>Lägg till</h3>
+<select id="uploadType" style="width:100%; padding:8px; margin-bottom:10px;"><option value="video">Video</option><option value="photo">Photo</option></select>
+<input id="fileInput" type="file" accept="video/*,image/*" style="width:100%; margin-bottom:10px;">
+<input id="titleInput" type="text" placeholder="Titel" style="width:100%; padding:6px; margin-bottom:10px;">
+<input id="descInput" type="text" placeholder="Beskrivning" style="width:100%; padding:6px; margin-bottom:10px;">
+<video id="previewVideo" style="display:none;width:100%; margin-bottom:10px;" controls></video>
+<img id="previewImg" style="display:none;width:100%; margin-bottom:10px;" />
+<button id="confirmAdd" style="width:100%; padding:10px; background:#000; color:#fff; border:none; border-radius:5px; cursor:pointer;">Lägg till</button>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-    <h1>Expose Hub</h1>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCDF4tTSzDLy1OZO991NF9EMRXX-mUTRrM",
+  authDomain: "exposehub-a7af0.firebaseapp.com",
+  projectId: "exposehub-a7af0",
+  storageBucket: "exposehub-a7af0.appspot.com",
+  messagingSenderId: "810468309656",
+  appId: "1:810468309656:web:de1c282523204f0a7aeeed",
+  measurementId: "G-RLS77KS14Q"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const storage = getStorage(app);
 
-    <div class="tab-buttons">
-        <button class="tab-btn active" data-tab="malmo">Malmö</button>
-        <button class="tab-btn" data-tab="other">Andra städer</button>
-    </div>
+const mainGrid = document.getElementById('mainGrid');
+const addBtn = document.getElementById('addBtn');
+const popup = document.getElementById('popup');
+const previewVideo = document.getElementById('previewVideo');
+const previewImg = document.getElementById('previewImg');
+const fileInput = document.getElementById('fileInput');
 
-    <hr>
-    <div id="malmo" class="tab-content active">
-        <div class="video-grid">
-            <div class="video-container">
-                <video controls src="videos/malmo1.mp4"></video>
-                <div class="video-title">Video 1</div>
-                <div class="video-description">Description</div>
-            </div>
-            <div class="video-container">
-                <video controls src="videos/malmo2.mp4"></video>
-                <div class="video-title">Video2</div>
-                <div class="video-description">Description</div>
-            </div>
-        </div>
-    </div>
+addBtn.onclick = () => popup.style.display = 'block';
 
-    <div id="other" class="tab-content">
-        <div class="video-grid">
-            <div class="video-container">
-                <video controls src="videos/lund1.mp4"></video>
-                <div class="video-title">Lund Video 1</div>
-                <div class="video-description">Description for Lund video 1 goes here.</div>
-            </div>
-            <div class="video-container">
-                <video controls src="videos/eslov1.mp4"></video>
-                <div class="video-title">Eslöv Video 1</div>
-                <div class="video-description">Description for Eslöv video 1 goes here.</div>
-            </div>
-        </div>
-    </div>
+// Preview before upload
+fileInput.onchange = () => {
+  const file = fileInput.files[0];
+  const type = document.getElementById('uploadType').value;
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  if(type==='video'){ previewVideo.src=url; previewVideo.style.display='block'; previewImg.style.display='none'; }
+  else{ previewImg.src=url; previewImg.style.display='block'; previewVideo.style.display='none'; }
+};
 
-    <script>
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(btn.dataset.tab).classList.add('active');
-            };
-        });
-    </script>
+// Add new item
+document.getElementById('confirmAdd').onclick = async () => {
+  const type = document.getElementById('uploadType').value;
+  const file = fileInput.files[0];
+  const title = document.getElementById('titleInput').value || (type==='video'?'New Video':'New Photo');
+  const desc = document.getElementById('descInput').value || '';
+  if(!file) return alert('Select a file!');
 
+  // Check size limit (Firebase Free Tier: 5GB total storage)
+  if(file.size > 500 * 1024 * 1024) return alert('Max filstorlek: 500MB');
+
+  const storageReference = sRef(storage, `${Date.now()}_${file.name}`);
+  await uploadBytes(storageReference, file);
+  const url = await getDownloadURL(storageReference);
+
+  push(ref(db, 'items'), { type, title, desc, url });
+
+  popup.style.display='none';
+  fileInput.value='';
+  document.getElementById('titleInput').value='';
+  document.getElementById('descInput').value='';
+  previewVideo.style.display='none';
+  previewImg.style.display='none';
+};
+
+// Load items in real-time
+onValue(ref(db,'items'), snapshot => {
+  mainGrid.innerHTML='';
+  const data = snapshot.val();
+  if(!data) return;
+  Object.values(data).reverse().forEach(item => {
+    const div = document.createElement('div');
+    div.className='item-container';
+    if(item.type==='video') div.innerHTML=`<video controls src="${item.url}"></video><div class="title">${item.title}</div><div class="description">${item.desc}</div>`;
+    else div.innerHTML=`<img src="${item.url}"><div class="title">${item.title}</div><div class="description">${item.desc}</div>`;
+    mainGrid.appendChild(div);
+  });
+});
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.onclick=()=>{
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.tab).classList.add('active');
+}});
+</script>
 </body>
 </html>
